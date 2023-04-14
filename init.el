@@ -28,9 +28,10 @@
   ;; Inihibit the startup splash screen
   (setq inhibit-startup-message t)
   ;; Disable some unnecessary GUI elements
-  (menu-bar-mode -1)
-  (tool-bar-mode -1)
-  (scroll-bar-mode -1)
+  (when window-system
+    (menu-bar-mode -1)
+    (tool-bar-mode -1)
+    (scroll-bar-mode -1))
   ;; Make it so that new buffers and files without extensions open in
   ;; `text-mode` rather than in `fundamental-mode`.
   (setq-default major-mode 'text-mode)
