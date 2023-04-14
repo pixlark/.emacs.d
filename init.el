@@ -10,6 +10,7 @@
 	       '("melpa" . "https://melpa.org/packages/") t)
   (add-to-list 'package-archives
 	       '("melpa-stable" . "https://stable.melpa.org/packages/") t)
+
   ;; Initialize use-package, which we use to define dependencies on
   ;; all of our external packages.
   (eval-when-compile
@@ -20,11 +21,39 @@
     :ensure t
     :pin melpa
     :if window-system
-    :config (load-theme 'gruber-darker))
+    :config (load-theme 'gruber-darker t))
   ;; `company-mode` auto-completion
-  (use-package company-mode
+  (use-package company
     :ensure t
-    :pin melpa))
+    :pin melpa
+    :custom
+    (company-idle-delay 0)
+    (company-minimum-prefix-length 1)
+    (company-selection-wrap-around t))
+  ;; `company-posframe` makes company-mode rendering better
+  ;; for non-terminal-based Emacs instances
+  (use-package company-posframe
+    :ensure t
+    :pin melpa
+    :if window-system
+    :config (add-hook 'company-mode-hook
+		      (lambda () (company-posframe-mode 1))))
+  ;; `flycheck-mode` error checking
+  (use-package flycheck
+    :ensure t
+    :pin melpa)
+  ;; `lsp-mode` language server protocol support
+  (use-package lsp-mode
+    :ensure t
+    :pin melpa
+    :after (company flycheck)
+    :custom (lsp-enable-snippet nil))
+  ;; `rustic-mode` Rust language support
+  (use-package rustic
+    :ensure t
+    :pin melpa
+    :after (lsp-mode)
+    :custom (rustic-analyzer-command '("rustup" "run" "stable" "rust-analyzer"))))
 
 (defun configure-miscellaneous ()
   ;; Put auto-generated customize code into `custom.el`.
@@ -42,8 +71,6 @@
   ;; Add a command for opening our emacs configuration quickly.
   (defun edit-conf ()
     (interactive)
-    (find-file "~/.emacs.d/configuration-notes.md")
-    (split-window-below)
     (find-file "~/.emacs.d/init.el"))
   (global-set-key (kbd "C-c c") 'edit-conf)
   ;; Silence error bells - they're annoying
