@@ -20,7 +20,11 @@
     :ensure t
     :pin melpa
     :if window-system
-    :config (load-theme 'gruber-darker)))
+    :config (load-theme 'gruber-darker))
+  ;; `company-mode` auto-completion
+  (use-package company-mode
+    :ensure t
+    :pin melpa))
 
 (defun configure-miscellaneous ()
   ;; Put auto-generated customize code into `custom.el`.
