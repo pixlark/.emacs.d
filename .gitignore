@@ -3,4 +3,4 @@ auto-save-list/
 elpa/
 custom.el
 **/.lsp-session*
-
+projectile*
