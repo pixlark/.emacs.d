@@ -37,7 +37,11 @@
   ;; Silence error bells - they're annoying
   (setq-default ring-bell-function 'ignore)
   ;; Use unix-style line endings everywhere, even on Windows.
-  (setq-default buffer-file-coding-system 'utf-8-unix))
+  (setq-default buffer-file-coding-system 'utf-8-unix)
+  ;; Show trailing whitespace
+  (setq-default show-trailing-whitespace t)
+  ;; Never use tabs
+  (setq-default indent-tabs-mode nil))
 
 (defun configure-text-mode ()
   "Configuration for `text-mode`."
@@ -54,12 +58,16 @@
 	      (company-mode 1)
 	      (flycheck-mode 1))))
 
-(defun change-project-root ()
-  "Change which project our Emacs instance is pointing to."
-  (interactive)
-  (require 'splash-screen)
-  (call-interactively 'neotree-dir)
-  (kill-splash-screen))
+(defun configure-xml-mode ()
+  "Configuration for `xml-mode`."
+  (setq-default nxml-child-indent 4)
+  ;; File associations
+  (add-to-list 'auto-mode-alist '("\\.xml\\'" . nxml-mode))
+  (add-to-list 'auto-mode-alist '("\\.xaml\\'" . nxml-mode))
+  (add-to-list 'auto-mode-alist '("\\.csproj\\'" . nxml-mode))
+  (add-to-list 'auto-mode-alist '("\\.csproj.user\\'" . nxml-mode))
+  (add-to-list 'auto-mode-alist '("\\.appxmanifest\\'" . nxml-mode))
+  (add-to-list 'auto-mode-alist '("\\.manifest\\'" . nxml-mode)))
 
 (defun configure-packages ()
   "Setup archives, load `use-package`, and define package dependencies."
@@ -98,7 +106,8 @@
     :ensure t
     :pin melpa
     :if window-system
-    :config (company-posframe-mode 1))
+    :config (company-posframe-mode 1)
+    :custom (company-posframe-quickhelp-delay 0))
   ;; `flycheck-mode` error checking
   (use-package flycheck
     :ensure t
@@ -131,36 +140,91 @@
     :pin melpa
     :after (lsp-mode)
     :custom (rustic-analyzer-command '("rustup" "run" "stable" "rust-analyzer")))
-  ;; `projectile` is a project manager
-  (use-package projectile
-    :demand t
-    :ensure t
-    :pin melpa
-    :bind (:map projectile-mode-map
-		("C-c p" . projectile-command-map)))
   ;; `neotree` displays a directory tree listing
   (use-package neotree
     :demand t
     :ensure t
     :pin melpa
-    :after projectile
     :custom
     (neo-window-width 35)
     :bind
     ("C-c t" . neotree-toggle)
-    ("C-c r" . change-project-root)))
+    :bind*
+    ("C-c C-c" . neotree-copy-node))
+  ;; `ripgrep` is a powerful search tool
+  (use-package ripgrep
+    :demand t
+    :ensure t
+    :pin melpa)
+  ;; `projectile` is a project manager
+  (use-package projectile
+    :demand t
+    :ensure t
+    :pin melpa
+    :after (neotree ripgrep)
+    :custom
+    (projectile-require-project-root t)
+    (projectile-switch-project-action 'neotree-projectile-action)
+    :config
+    (projectile-global-mode 1)
+    (add-hook 'projectile-after-switch-project-hook
+	      (lambda ()
+		(neotree-show)
+		(require 'splash-screen)
+		(kill-splash-screen)))
+    :bind (:map projectile-mode-map
+		("C-c C-p" . projectile-command-map))
+    :bind* ("C-c C-p s s" . projectile-ripgrep))
+  ;; `flycheck-projectile` can list all errors in the current project
+  (use-package flycheck-projectile
+    :demand t
+    :pin manual
+    :after (projectile flycheck)
+    ;; Use my personal fork of `flycheck-projectile`
+    :init
+    (add-to-list 'load-path "~/.emacs.d/flycheck-projectile")
+    :bind ("C-c e" . flycheck-projectile-list-errors))
+  ;; `tree-sitter` is a modern syntax highlighting framework
+  (use-package tree-sitter
+    :ensure t
+    :pin melpa)
+  ;; `tree-sitter-langs` provide specific languages for `tree-sitter`
+  (use-package tree-sitter-langs
+    :ensure t
+    :pin melpa
+    :after tree-sitter)
+  ;; `csharp-mode` provides syntax support for C#
+  (use-package csharp-mode
+    :ensure t
+    :pin melpa
+    :hook (csharp-mode . (lambda ()
+			   (tree-sitter-hl-mode 1)
+			   (lsp-mode 1)
+			   (flycheck-mode 1)
+			   (company-mode 1))))
+  ;; `diredful` gives colors to dired
+  (use-package diredful
+    :ensure t
+    :pin melpa
+    :config (diredful-mode 1)))
 
 (defun configure-personal ()
   "Configure our personal packages."
   (add-to-list 'load-path "~/.emacs.d/brooke")
+  ;; Splash screen
   (require 'splash-screen)
-  (add-hook 'window-setup-hook 'display-splash-screen))
+  (add-hook 'window-setup-hook 'display-splash-screen)
+  ;; Rexc mode
+  (require 'rexc-mode)
+  (tree-sitter-require 'rexc "~/.emacs.d/tree-sitter-rexc/build/Release/" "tree-sitter-rexc")
+  (add-to-list tree-sitter-major-mode-language-alist '(rexc-mode . rexc)))
 
 ;; Startup process
 (configure-theme)
 (configure-miscellaneous)
 (configure-text-mode)
 (configure-elisp-mode)
+(configure-xml-mode)
 (configure-packages)
 (configure-personal)
 

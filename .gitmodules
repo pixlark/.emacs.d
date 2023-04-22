@@ -1,3 +1,9 @@
 [submodule "use-package"]
 	path = use-package
 	url = https://github.com/jwiegley/use-package
+[submodule "flycheck-projectile"]
+	path = flycheck-projectile
+	url = git@github.com:pixlark/flycheck-projectile.git
+[submodule "tree-sitter-rexc"]
+	path = tree-sitter-rexc
+	url = https://gitlab.com/styx_m/tree-sitter-rexc.git

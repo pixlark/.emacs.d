@@ -15,7 +15,7 @@
 	 (vertical-center-offset (- (/ window-height 2) 1)))
     (with-current-buffer splash-buffer
       (setq fill-column window-width)
-      
+
       (erase-buffer)
 
       (insert-char ?\n vertical-center-offset)
@@ -24,7 +24,7 @@
       (center-line)
       (insert-char ?\n 1)
 
-      (insert (concat (propertize "C-c r"  'face 'font-lock-constant-face) " to open a project."))
+      (insert (concat (propertize "(C-c C-p) p"  'face 'font-lock-constant-face) " to open a project."))
       (center-line)
 
       (display-buffer-same-window splash-buffer nil))))
