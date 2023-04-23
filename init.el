@@ -31,7 +31,6 @@
   ;; Add a command for quickly viewing our keybinding notes.
   (defun view-keybinding-notes ()
     (interactive)
-    (split-window-right)
     (find-file "~/.emacs.d/binding-notes.md"))
   (global-set-key (kbd "C-c k") 'view-keybinding-notes)
   ;; Silence error bells - they're annoying
@@ -41,7 +40,9 @@
   ;; Show trailing whitespace
   (setq-default show-trailing-whitespace t)
   ;; Never use tabs
-  (setq-default indent-tabs-mode nil))
+  (setq-default indent-tabs-mode nil)
+  ;; Alow frame to resize by pixels, not just by text row/column size
+  (setq-default frame-resize-pixelwise t))
 
 (defun configure-text-mode ()
   "Configuration for `text-mode`."
@@ -97,7 +98,7 @@
     :ensure t
     :pin melpa
     :custom
-    (company-idle-delay 0)
+    (company-idle-delay 0.5)
     (company-minimum-prefix-length 1)
     (company-selection-wrap-around t))
   ;; `company-posframe` makes company-mode rendering better
@@ -120,10 +121,15 @@
     :custom
     (lsp-enable-snippet nil)
     (lsp-rust-analyzer-server-display-inlay-hints t)
+    (lsp-idle-delay 0.5)
+    (lsp-eldoc-render-all nil)
+    (lsp-signature-render-documentation nil)
     :config
     (add-hook 'lsp-rust-analyzer-inlay-hints-mode-hook
 	      (lambda ()
-		(set-face-attribute 'lsp-rust-analyzer-inlay-face nil :inherit 'font-lock-doc-face))))
+		(set-face-attribute 'lsp-rust-analyzer-inlay-face nil :inherit 'font-lock-doc-face)))
+    (setq gc-cons-threshold 100000000)
+    (setq read-process-output-max (* 1024 1024)))
   ;; `lsp-ui` adds some extra features to `lsp-mode`
   (use-package lsp-ui
     :ensure t
@@ -139,14 +145,15 @@
     :ensure t
     :pin melpa
     :after (lsp-mode)
-    :custom (rustic-analyzer-command '("rustup" "run" "stable" "rust-analyzer")))
+    :custom
+    (rustic-analyzer-command '("rustup" "run" "stable" "rust-analyzer"))
+    (rustic-format-on-save t)
+    (rustic-format-display-method 'ignore))
   ;; `neotree` displays a directory tree listing
   (use-package neotree
     :demand t
     :ensure t
     :pin melpa
-    :custom
-    (neo-window-width 35)
     :bind
     ("C-c t" . neotree-toggle)
     :bind*
@@ -155,7 +162,9 @@
   (use-package ripgrep
     :demand t
     :ensure t
-    :pin melpa)
+    :pin melpa
+    :init (when (eq system-type 'gnu/linux)
+            (setq shell-file-name "/usr/bin/bash")))
   ;; `projectile` is a project manager
   (use-package projectile
     :demand t
@@ -206,7 +215,24 @@
   (use-package diredful
     :ensure t
     :pin melpa
-    :config (diredful-mode 1)))
+    :config (diredful-mode 1))
+  ;; `exec-path-from-shell` matches emacs' PATH to your shell's PATH
+  (use-package exec-path-from-shell
+    :ensure t
+    :pin melpa
+    :config (when (memq window-system '(mac ns x))
+              (exec-path-from-shell-initialize)))
+  ;; `diminish` lets us remove some minor modes from the mode line
+  (use-package diminish
+    :ensure t
+    :pin melpa
+    :config
+    (diminish 'lsp-lens-mode)
+    (diminish 'projectile-mode)
+    (diminish 'company-posframe-mode)
+    (diminish 'eldoc-mode)
+    (diminish 'flycheck-mode)
+    (diminish 'company-mode)))
 
 (defun configure-personal ()
   "Configure our personal packages."
@@ -216,8 +242,9 @@
   (add-hook 'window-setup-hook 'display-splash-screen)
   ;; Rexc mode
   (require 'rexc-mode)
-  (tree-sitter-require 'rexc "~/.emacs.d/tree-sitter-rexc/build/Release/" "tree-sitter-rexc")
-  (add-to-list tree-sitter-major-mode-language-alist '(rexc-mode . rexc)))
+  ;;(tree-sitter-require 'rexc "~/.emacs.d/tree-sitter-rexc/build/Release/" "tree-sitter-rexc")
+  ;;(add-to-list tree-sitter-major-mode-language-alist '(rexc-mode . rexc))
+  )
 
 ;; Startup process
 (configure-theme)
